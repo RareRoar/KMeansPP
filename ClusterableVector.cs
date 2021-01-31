@@ -9,6 +9,7 @@ namespace KMeansPP
     public class ClusterableVector : IVector, IClusterable<IVector>
     {
         private double[] valueSequence_;
+
         public IVector ClusterCentroid { get; set; }
         public double[] CoordinatesArray { get => valueSequence_; }
 

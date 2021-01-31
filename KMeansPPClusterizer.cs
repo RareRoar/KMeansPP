@@ -19,7 +19,8 @@ namespace KMeansPP
 
         private Dictionary<IVector, List<IVector>> clusterDict_ = null;
 
-        public KMeansPPClusterizer(int centroidCount, IEnumerable<T> vectors, MetricFunc metricFunc, int maxIterations = 1000)
+        public KMeansPPClusterizer(int centroidCount, IEnumerable<T> vectors, MetricFunc metricFunc,
+            int maxIterations = 1000)
         {
             if (centroidCount <= 0)
             {
@@ -45,10 +46,10 @@ namespace KMeansPP
             vectors_ = new T[vectors.Count()];
             int index = 0;
             object lockObject = new object();
-            
             Parallel.ForEach(vectors, vector =>
             {
-                Parallel.For(0, vector.Dimension, i => { 
+                Parallel.For(0, vector.Dimension, i => 
+                { 
                     if (index == 0)
                     {
                         dimensionIntervals_[i] = new Tuple<double, double>(vector[i], vector[i]);
@@ -66,8 +67,14 @@ namespace KMeansPP
                 }
             });
 
+            InitializeCentroids();
+        }
+
+        private void InitializeCentroids()
+        {
             centroids_ = new T[centroidCount_];
-            Parallel.For(0, centroidCount_, i => {
+            Parallel.For(0, centroidCount_, i => 
+            {
                 centroids_[i] = GetNewCentroid();
             });
         }
@@ -100,11 +107,14 @@ namespace KMeansPP
             {
                 double[] newCentroidCoords = new double[dimensions_];
                 int onlyClusterSize = vectors_.Length;
-                Parallel.For(0, onlyClusterSize, i => {
-                    Parallel.For(0, dimensions_, j => {
+                Parallel.For(0, onlyClusterSize, i => 
+                {
+                    Parallel.For(0, dimensions_, j => 
+                    {
                         newCentroidCoords[j] += vectors_[i][j] / onlyClusterSize;
                     });
                 });
+
                 T newCentroid = new T();
                 newCentroid.UpdateCoordinates(newCentroidCoords);
                 return newCentroid;
@@ -117,7 +127,7 @@ namespace KMeansPP
                 return GetFirstCentroid();
             }
 
-            double[] distancesToClosestCentroid = new double[vectors_.Count()];
+            double[] distancesToClosestCentroid = new double[vectors_.Length];
             double distanceSum = 0.0;
             object lockObject = new object();
             Parallel.For(0, vectors_.Length,
@@ -143,7 +153,8 @@ namespace KMeansPP
             }
             newCentroidIndex--;
 
-            Parallel.ForEach(vectors_, vector => {
+            Parallel.ForEach(vectors_, vector => 
+            {
                 double distanceToOldCentroid = metricFunc_(vector, vector.ClusterCentroid);
                 double distanceToNewCentroid = metricFunc_(vector, vectors_[newCentroidIndex]);
                 if (distanceToNewCentroid < distanceToOldCentroid)
@@ -157,10 +168,12 @@ namespace KMeansPP
 
         private void UpdateClusters()
         {
-            Parallel.For(0, vectors_.Length, i => {
+            Parallel.For(0, vectors_.Length, i =>
+            {
                 int closestCentroidIndex = -1;
                 double distanceToClosestCentroid = double.MaxValue;
-                Parallel.For(0, centroidCount_, j => {
+                Parallel.For(0, centroidCount_, j =>
+                {
                     double distanceToCurrentCentroid = metricFunc_(vectors_[i], centroids_[j]);
                     if (distanceToCurrentCentroid < distanceToClosestCentroid)
                     {
@@ -177,7 +190,8 @@ namespace KMeansPP
             UpdateClusters();
             
             List<int>[] centroidVectorIndexMapping = new List<int>[centroidCount_];
-            Parallel.For(0, centroidCount_, i => {
+            Parallel.For(0, centroidCount_, i => 
+            {
                 centroidVectorIndexMapping[i] = new List<int>();
                 for (int j = 0; j < vectors_.Length; j++)
                 {
@@ -201,18 +215,20 @@ namespace KMeansPP
                         newCentroidCoordinates[j] += vectors_[index][j] / clusterSize;
                     });
                 }
+
                 var newCentroid = new T();
                 newCentroid.UpdateCoordinates(newCentroidCoordinates);
                 T oldCentroid = centroids_[i];
                 centroids_[i] = newCentroid;
                 return partialResidual + metricFunc_(newCentroid, oldCentroid);
             }, 
-            (localPartialResidual) => {
+            localPartialResidual => {
                 lock (lockObject)
                 {
                     residual += localPartialResidual;
                 }
             });
+
             return residual;
         }
 
@@ -265,7 +281,8 @@ namespace KMeansPP
             }            
 
             double[] silhouetteCoeffs = new double[vectors_.Length];
-            Parallel.For(0, vectors_.Length, i => {
+            Parallel.For(0, vectors_.Length, i =>
+            {
                 double avgIntraclusterDistance = 0.0;
                 int clusterSize = clusterDict_[vectors_[i].ClusterCentroid].Count();
                 object lockObject1 = new object();
@@ -327,6 +344,7 @@ namespace KMeansPP
                 negSilhouetteCoeffPercent = -1.0;
                 return false;
             }
+
             double outResult = 0.0;
             object lockObject = new object();
             int coeffCount = silhouetteCoeffs.Length;
