@@ -120,6 +120,7 @@ namespace KMeansPP
                 return newCentroid;
             }
         }
+
         private T GetNewCentroid()
         {
             if (centroids_[0] == null)
@@ -166,6 +167,7 @@ namespace KMeansPP
             return vectors_[newCentroidIndex];
         }
 
+        //assing vectors to clusters with closest centroids
         private void UpdateClusters()
         {
             Parallel.For(0, vectors_.Length, i =>
@@ -185,6 +187,7 @@ namespace KMeansPP
             });
         }
 
+        //reassign centroids and return sum of distances between old and new centroids
         private double UpdateCentroids()
         {
             UpdateClusters();
@@ -232,6 +235,7 @@ namespace KMeansPP
             return residual;
         }
 
+        //perform algorithms iterations and return true is it has converged
         private bool DefineClusters()
         {
             for (int i = 0; i < maxIterations_; i++)
@@ -248,6 +252,7 @@ namespace KMeansPP
             return false;
         }
 
+        //return dictionary of (cluster centroid, cluster vectors) pairs
         public Dictionary<IVector, List<IVector>> GetClusters()
         {
             if (DefineClusters())
@@ -336,6 +341,9 @@ namespace KMeansPP
 
             return silhouetteCoeffs;
         }
+
+        //return true if centroids have converged and
+        //caclulates persentage of negative silhouette coefficients
         public bool PerformSilhouetteAnalysis(out double negSilhouetteCoeffPercent)
         {
             double[] silhouetteCoeffs = GetSilhouetteCoeffs();
